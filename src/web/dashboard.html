@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jev Triage Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: the sorting office at night. Left: the intake counter (raise a ticket) and the sorted pile.
+   Right: the live sorting line, one station per pipeline step, narrated in plain English. Projector-first, single dark look. */
+:root {
+  color-scheme: dark;
+  --navy: #0e1630;
+  --navy-2: #16204a;
+  --navy-3: #1f2c5e;
+  --line: #2b3863;
+  --text: #ffffff;
+  --mut: #9ba6c3;
+  --dim: #5f6b8f;
+  --label: #ffffff;
+  --ink: #111726;
+  --signal: #ff5a1f;
+  --feature: #6f93ff;
+  --amber: #ffb21e;
+  --ok: #3ddc97;
+  --bad: #ff6b6b;
+
+  --font-display: "Archivo", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 8px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--navy); color: var(--text);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ol, ul { margin: 0; }
+ol, ul { list-style: none; padding: 0; }
+button, input, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+
+.shell { min-height: 100%; display: grid; grid-template-rows: auto 1fr; padding-inline: clamp(16px, 2.5vw, 40px); }
+
+/* header */
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(1.4rem, 2.4vw, 2rem); text-transform: uppercase; letter-spacing: -.01em; }
+.brand h1 span { color: var(--signal); }
+.brand p { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: .78rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--mut); white-space: nowrap; }
+.badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+.badge.good::before { background: var(--ok); }
+.badge.warn::before { background: var(--amber); }
+.badge.bad::before { background: var(--bad); }
+.badge b { color: var(--text); font-weight: 600; }
+
+/* main grid */
+main { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: clamp(20px, 2.5vw, 40px); padding-block: 26px 32px; min-height: 0; }
+aside { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+.kicker { font-family: var(--font-mono); font-size: .74rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mut); display: flex; align-items: center; gap: 10px; }
+.kicker::before { content: ""; width: 20px; height: 3px; background: var(--signal); }
+
+/* intake form */
+.intake { background: var(--label); color: var(--ink); border-radius: var(--radius); padding: 20px; display: grid; gap: 14px; }
+.intake h2 { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.25rem; }
+.intake label { display: grid; gap: 6px; font-family: var(--font-mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: #586176; }
+.intake input, .intake textarea {
+  width: 100%; border: 2px solid #d5dae3; border-radius: 6px; padding: 10px 12px; background: #fff; color: var(--ink);
+  font-family: var(--font-body); font-size: 1rem; letter-spacing: 0; text-transform: none; resize: vertical;
+}
+.intake input:focus, .intake textarea:focus { outline: none; border-color: var(--signal); }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.examples button { border: 1px solid #c7cdd8; background: #f1f3f7; color: var(--ink); border-radius: 999px; padding: 5px 11px; font-family: var(--font-mono); font-size: .76rem; cursor: pointer; }
+.examples button:hover { border-color: var(--ink); }
+.send {
+  border: 0; border-radius: 6px; padding: 13px 16px; background: var(--signal); color: #fff; cursor: pointer;
+  font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.05rem; letter-spacing: .02em; text-transform: uppercase;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.send:hover { filter: brightness(1.06); }
+.send:disabled { opacity: .6; cursor: progress; }
+.hint { font-size: .85rem; color: #586176; }
+.hint.error { color: #c0261a; }
+
+/* sorted pile */
+.pile { display: grid; gap: 10px; }
+.pile-empty { color: var(--dim); font-size: .92rem; }
+.slip {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left;
+  width: 100%; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--navy-2); cursor: pointer;
+}
+.slip:hover { border-color: var(--mut); }
+.slip.current { border-color: var(--signal); box-shadow: inset 3px 0 0 var(--signal); }
+.slip b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slip small { font-family: var(--font-mono); font-size: .72rem; color: var(--mut); }
+
+/* stamps */
+.stamp {
+  display: inline-block; font-family: var(--font-display); font-stretch: 125%; font-weight: 900; text-transform: uppercase;
+  letter-spacing: .04em; font-size: .78rem; line-height: 1; padding: 6px 9px 5px; border: 2.5px solid currentColor; border-radius: 4px;
+  transform: rotate(-4deg); white-space: nowrap;
+}
+.stamp.bug { color: var(--signal); }
+.stamp.feature_request { color: var(--feature); }
+.stamp.question { color: var(--ok); }
+.stamp.needs_review { color: var(--amber); }
+.stamp.working { color: var(--mut); transform: none; border-style: dashed; }
+.stamp.failed { color: var(--bad); }
+.stamp.big { font-size: clamp(1.3rem, 2.2vw, 1.9rem); padding: 10px 16px 8px; border-width: 4px; }
+.stamp.big.land { animation: thud .45s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes thud { from { opacity: 0; transform: scale(1.9) rotate(-14deg); } to { opacity: 1; transform: rotate(-4deg); } }
+
+/* stage */
+.stage { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.ticket { background: var(--label); color: var(--ink); border-radius: var(--radius); padding: 22px 24px; display: grid; gap: 10px; position: relative; overflow: hidden; }
+.ticket::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(180deg, var(--ink) 0 3px, transparent 3px 5px, var(--ink) 5px 6px, transparent 6px 9px); opacity: .85; }
+.ticket .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: #586176; padding-right: 18px; }
+.ticket .meta a { color: #3b4357; }
+.ticket h2 { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: clamp(1.3rem, 2.4vw, 2rem); line-height: 1.1; padding-right: 18px; }
+.ticket p { font-size: 1.05rem; color: #3b4357; padding-right: 18px; white-space: pre-line; }
+.waiting { border: 2px dashed var(--line); border-radius: var(--radius); padding: 34px 28px; display: grid; gap: 10px; color: var(--mut); }
+.waiting b { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.4rem; color: var(--text); }
+
+/* the line */
+.line { position: relative; display: grid; gap: 12px; }
+.line::before { content: ""; position: absolute; left: 21px; top: 22px; bottom: 22px; width: 2px; background: var(--line); }
+.station { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 14px 18px 14px 0; border-radius: var(--radius); transition: background .3s, opacity .3s; }
+.station[data-state="waiting"] { opacity: .38; }
+.station[data-state="working"] { background: var(--navy-2); }
+.station[data-state="done"], .station[data-state="error"] { background: var(--navy-2); }
+.mark {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; position: relative; z-index: 1;
+  background: var(--navy); border: 2px solid var(--line); font-family: var(--font-mono); font-weight: 600; font-size: .9rem; color: var(--mut);
+}
+.station[data-state="working"] .mark { border-color: var(--signal); color: var(--signal); }
+.station[data-state="working"] .mark::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--signal); animation: spin .9s linear infinite; }
+.station[data-state="done"] .mark { background: var(--signal); border-color: var(--signal); color: #fff; }
+.station[data-state="skipped"] .mark { border-style: dashed; color: var(--dim); }
+.station[data-state="error"] .mark { background: var(--bad); border-color: var(--bad); color: var(--navy); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.body { display: grid; gap: 6px; min-width: 0; padding-top: 2px; }
+.body h3 { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.15rem; line-height: 1.2; }
+.body .say { color: var(--mut); font-size: 1rem; max-width: 70ch; }
+.station[data-state="done"] .say, .station[data-state="working"] .say { color: #dfe5f5; }
+.time { font-family: var(--font-mono); font-size: .8rem; color: var(--mut); padding-top: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.detail:empty { display: none; }
+.detail { margin-top: 8px; }
+.detail a { color: var(--signal); font-family: var(--font-mono); font-size: .9rem; }
+
+/* jev answers */
+.answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; }
+.q h4 { margin: 0 0 6px; font-family: var(--font-mono); font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mut); }
+.bar { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: .82rem; color: var(--mut); margin-bottom: 4px; }
+.bar .t { height: 8px; border-radius: 4px; background: var(--navy-3); overflow: hidden; }
+.bar .t i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--dim); transition: width .9s var(--ease); }
+.bar.win { color: var(--text); font-weight: 600; }
+.bar.win .t i { background: var(--signal); }
+.bar .v { text-align: right; font-variant-numeric: tabular-nums; }
+.receipt { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { font-family: var(--font-mono); font-size: .78rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: #dfe5f5; }
+.chip.hot { background: var(--signal); border-color: var(--signal); color: #fff; }
+
+/* decision */
+.verdict { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+.verdict ul { display: grid; gap: 4px; font-family: var(--font-mono); font-size: .82rem; color: var(--mut); }
+.verdict li::before { content: "· "; color: var(--signal); }
+
+/* finale */
+.finale { display: none; border-radius: var(--radius); padding: 18px 22px; background: var(--signal); color: #fff; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.finale.on { display: flex; animation: rise .5s var(--ease) both; }
+.finale b { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(1.2rem, 2.2vw, 1.7rem); text-transform: uppercase; }
+.finale span { font-family: var(--font-mono); font-size: .85rem; color: rgb(255 255 255 / .9); }
+.finale.review { background: var(--amber); color: var(--ink); }
+.finale.review span { color: rgb(17 23 38 / .8); }
+.finale.fail { background: var(--bad); color: var(--ink); }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+@media (max-width: 980px) {
+  main { grid-template-columns: 1fr; }
+  .answers { grid-template-columns: 1fr; }
+  .station { grid-template-columns: 44px minmax(0, 1fr); }
+  .time { grid-column: 2; padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <h1>Jev <span>triage</span> desk</h1>
+      <p>Client ticket → decision → action</p>
+    </div>
+    <div class="badges">
+      <span class="badge" id="b-jev">Jev: <b>…</b></span>
+      <span class="badge" id="b-writes">Writes: <b>…</b></span>
+      <span class="badge" id="b-conn">Live feed: <b>connecting</b></span>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <form class="intake" id="intake" autocomplete="off">
+        <h2>Raise a ticket as a client</h2>
+        <label for="f-title">Title<input id="f-title" name="title" maxlength="200" required placeholder="Export button does nothing"></label>
+        <label for="f-desc">What's happening?<textarea id="f-desc" name="description" rows="4" maxlength="4000" placeholder="Since this morning the export button does nothing when I click it. Our report is due at 3pm."></textarea></label>
+        <div class="examples" aria-label="Examples">
+          <button type="button" data-ex="0">Complaint</button>
+          <button type="button" data-ex="1">Feature idea</button>
+          <button type="button" data-ex="2">Question</button>
+          <button type="button" data-ex="3">Vague</button>
+        </div>
+        <button class="send" id="send" type="submit"><span id="send-label">Send</span><span aria-hidden="true">→</span></button>
+        <p class="hint" id="hint"></p>
+      </form>
+
+      <section>
+        <p class="kicker" style="margin-bottom:12px">Sorted today</p>
+        <div class="pile" id="pile"><p class="pile-empty">Nothing yet. Tickets appear here once they've been sorted.</p></div>
+      </section>
+    </aside>
+
+    <section class="stage" aria-live="polite">
+      <p class="kicker">Now sorting</p>
+      <div id="ticket"></div>
+      <ol class="line" id="line"></ol>
+      <div class="finale" id="finale"><b id="finale-title"></b><span id="finale-sub"></span></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const STEPS = [
+  { key: "received", n: 1, title: "Ticket arrives" },
+  { key: "jev", n: 2, title: "Jev reads it" },
+  { key: "decide", n: 3, title: "Our rules decide" },
+  { key: "github", n: 4, title: "Developers get an issue" },
+  { key: "clickup", n: 5, title: "ClickUp is updated" },
+];
+const EXAMPLES = [
+  ["Export button does nothing", "Since this morning the export button does nothing when I click it. Our monthly report is due at 3pm today."],
+  ["Export to Excel", "It would be great if we could export reports to Excel as well as PDF."],
+  ["How do I add a new user?", "I'm new to the account. How do I add a colleague so they can log in?"],
+  ["The app feels weird", "Something about the app feels off lately, not sure what."],
+];
+const KIND = {
+  bug: { stamp: "Bug", phrase: "a bug" },
+  feature_request: { stamp: "Feature", phrase: "a feature request" },
+  question: { stamp: "Question", phrase: "a question" },
+  unclear: { stamp: "Unclear", phrase: "unclear" },
+  needs_review: { stamp: "Review", phrase: "something a person should check" },
+};
+const PRETTY = { bug: "bug", feature_request: "feature", question: "question", unclear: "unclear" };
+const PRIORITY = { 1: "Urgent", 2: "High", 3: "Normal", 4: "Low" };
+const GAP_MS = 750; // live steps are revealed at least this far apart so a room can follow them
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const pct = (p) => Math.round(p * 100) + "%";
+
+let cfg = { jevMock: true, dryRun: false, clickupWrites: false, githubRepo: null };
+const runs = new Map();   // runId → { id, title, description, url, real, steps: {key: {status, data, at}}, startedAt, done }
+let order = [];           // runIds, newest first
+let currentId = null;
+let pending = [];
+let lastShown = 0;
+let fresh = null; // "runId:step" just revealed live; only that one animates
+
+/* ---------- state ---------- */
+function apply(e) {
+  let r = runs.get(e.runId);
+  if (!r) {
+    r = { id: e.runId, steps: {}, startedAt: e.at, done: null, title: "", description: "", real: true };
+    runs.set(e.runId, r);
+    order.unshift(e.runId);
+  }
+  if (e.step === "received") Object.assign(r, e.data);
+  if (e.step === "done") r.done = { ...e.data, at: e.at };
+  else r.steps[e.step] = { status: e.status, data: e.data || {}, at: e.at };
+  return r;
+}
+
+/* ---------- narration ---------- */
+function say(r, key) {
+  const s = r.steps[key];
+  if (!s) return "";
+  const d = s.data;
+  const dec = r.steps.decide?.data;
+  switch (key) {
+    case "received":
+      return r.real ? "A client raised a new ticket in ClickUp. Nobody on our side has touched it." : "Practice ticket from this screen. Nothing will be created or changed.";
+    case "jev":
+      if (s.status === "start") return "Jev is answering four questions at once: what kind of request is this, how urgent, which part of the system, and does a person need to see it?";
+      if (s.status === "error") return "Jev didn't answer: " + d.message;
+      return `Answered in ${d.latencyMs} ms. It's ${pct(d.answers.type.confidence)} sure this is ${KIND[d.answers.type.choice]?.phrase ?? d.answers.type.choice}.` + (d.mock ? " (Mock mode: keyword matching, not real Jev.)" : "");
+    case "decide":
+      if (d.kind === "bug") return `Confident enough to act on its own. It's a bug, so it gets ${d.priorityName} priority and goes straight to the developers.`;
+      if (d.kind === "feature_request") return "It's a feature request. It gets tagged for the product team. No developer ticket needed yet.";
+      if (d.kind === "question") return "It's a question, not a problem. It gets tagged so someone can reply to the client.";
+      return "Not sure enough to act alone, so it's flagged for a person to look at. Nothing else happens automatically.";
+    case "github":
+      if (s.status === "start") return "Opening a GitHub issue with the client's words, Jev's answers, and a link back to ClickUp…";
+      if (s.status === "done") return `GitHub issue #${d.number} opened in ${d.repo}, labelled and prioritised.`;
+      if (s.status === "error") return "GitHub refused: " + d.message;
+      if (d.reason === "not-a-bug") return dec?.kind === "needs_review" ? "No issue. A person decides first." : "No issue needed. It isn't a bug.";
+      return `${d.reason === "practice" ? "Practice" : "Dry run"}: would open a GitHub issue${d.repo ? " in " + d.repo : ""}.`;
+    case "clickup":
+      if (s.status === "start") return "Writing the result back to the ticket in ClickUp…";
+      if (s.status === "error") return "ClickUp refused: " + d.message;
+      {
+        const parts = [`tagged “${(d.tags || []).join(", ")}”`];
+        if (d.priority) parts.push(`priority ${PRIORITY[d.priority]}`);
+        if (s.status === "done") return `Ticket ${parts.join(", ")}, with a comment explaining why.`;
+        return `${d.reason === "practice" ? "Practice" : "Dry run"}: would be ${parts.join(", ")}.`;
+      }
+  }
+  return "";
+}
+
+/* ---------- rendering ---------- */
+function stateOf(r, key) {
+  const s = r.steps[key];
+  if (!s) return "waiting";
+  return { start: "working", done: "done", skipped: "skipped", error: "error" }[s.status];
+}
+
+function bars(title, probs, winner, animate) {
+  const q = el("div", "q");
+  q.appendChild(el("h4", null, title));
+  const entries = Object.entries(probs).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  for (const [label, p] of entries) {
+    const row = el("div", "bar" + (label === winner ? " win" : ""));
+    row.append(el("span", null, PRETTY[label] ?? label));
+    const t = el("span", "t"); const fill = el("i"); t.appendChild(fill); row.appendChild(t);
+    row.append(el("span", "v", pct(p)));
+    q.appendChild(row);
+    const w = (p * 100).toFixed(1) + "%";
+    if (animate) requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = w; }));
+    else { fill.style.transition = "none"; fill.style.width = w; }
+  }
+  return q;
+}
+
+function detail(r, key) {
+  const s = r.steps[key];
+  const box = el("div", "detail");
+  if (!s) return box;
+  if (key === "jev" && s.status === "done") {
+    const a = s.data.answers;
+    const anim = fresh === r.id + ":jev";
+    const grid = el("div", "answers");
+    grid.append(
+      bars("What kind?", a.type.probabilities, a.type.choice, anim),
+      bars("How urgent?", a.urgency.probabilities, a.urgency.choice, anim),
+      bars("Which part?", a.area.probabilities, a.area.choice, anim),
+      bars("Needs a person?", { yes: a.needs_human.noul, no: 1 - a.needs_human.noul }, a.needs_human.noul >= 0.5 ? "yes" : "no", anim),
+    );
+    const rc = el("div", "receipt");
+    rc.append(el("span", "chip hot", s.data.latencyMs + " ms"), el("span", "chip", "$" + s.data.costUsd.toFixed(6)), el("span", "chip", s.data.model));
+    box.append(grid, rc);
+  }
+  if (key === "decide") {
+    const v = el("div", "verdict");
+    v.appendChild(el("span", "stamp big " + (fresh === r.id + ":decide" ? "land " : "") + s.data.kind, KIND[s.data.kind]?.stamp ?? s.data.kind));
+    const ul = el("ul");
+    for (const reason of s.data.reasons || []) ul.appendChild(el("li", null, reason));
+    v.appendChild(ul);
+    box.appendChild(v);
+  }
+  if (key === "github" && s.status === "done") {
+    const a = el("a", null, "Open issue #" + s.data.number + " ↗"); a.href = s.data.url; a.target = "_blank"; a.rel = "noopener";
+    box.appendChild(a);
+  }
+  if (key === "clickup" && s.status === "done" && s.data.url) {
+    const a = el("a", null, "Open in ClickUp ↗"); a.href = s.data.url; a.target = "_blank"; a.rel = "noopener";
+    box.appendChild(a);
+  }
+  return box;
+}
+
+function renderStage() {
+  const r = runs.get(currentId);
+  const ticket = $("ticket"), line = $("line"), finale = $("finale");
+  ticket.replaceChildren(); line.replaceChildren(); finale.className = "finale";
+  if (!r) {
+    const w = el("div", "waiting");
+    w.append(el("b", null, "Waiting for a ticket"), el("span", null, cfg.clickupWrites
+      ? "Raise one on the left, or create a task in the ClickUp list. It appears here within a second."
+      : "Raise a practice ticket on the left to watch it get sorted."));
+    ticket.appendChild(w);
+    return;
+  }
+  const card = el("div", "ticket");
+  const meta = el("div", "meta");
+  meta.appendChild(el("span", null, r.real ? "Ticket from a client · ClickUp" : "Practice ticket"));
+  if (r.url) { const a = el("a", null, "Open in ClickUp ↗"); a.href = r.url; a.target = "_blank"; a.rel = "noopener"; meta.appendChild(a); }
+  card.append(meta, el("h2", null, r.title));
+  if (r.description) card.appendChild(el("p", null, r.description));
+  ticket.appendChild(card);
+
+  for (const step of STEPS) {
+    const state = stateOf(r, step.key);
+    const li = el("li", "station"); li.dataset.state = state;
+    li.appendChild(el("span", "mark", state === "done" ? "✓" : state === "skipped" ? "–" : state === "error" ? "!" : String(step.n)));
+    const body = el("div", "body");
+    body.append(el("h3", null, step.title), el("p", "say", say(r, step.key) || (state === "waiting" ? "Waiting…" : "")), detail(r, step.key));
+    li.appendChild(body);
+    const s = r.steps[step.key];
+    li.appendChild(el("span", "time", s ? "+" + ((s.at - r.startedAt) / 1000).toFixed(2) + "s" : ""));
+    line.appendChild(li);
+  }
+
+  const failed = Object.values(r.steps).some((s) => s.status === "error");
+  if (r.done || failed) {
+    const kind = r.steps.decide?.data.kind;
+    finale.classList.add("on");
+    if (failed) {
+      finale.classList.add("fail");
+      $("finale-title").textContent = "Something went wrong";
+      $("finale-sub").textContent = "Check the terminal. The ticket can be retried.";
+    } else if (kind === "needs_review") {
+      finale.classList.add("review");
+      $("finale-title").textContent = "Handed to a person";
+      $("finale-sub").textContent = `Sorted in ${(r.done.totalMs / 1000).toFixed(1)} s. The AI knew it wasn't sure.`;
+    } else {
+      $("finale-title").textContent = `Done in ${(r.done.totalMs / 1000).toFixed(1)} s`;
+      $("finale-sub").textContent = "Nobody had to sort this by hand.";
+    }
+  }
+}
+
+function renderPile() {
+  const pile = $("pile");
+  if (!order.length) return;
+  pile.replaceChildren();
+  for (const id of order.slice(0, 12)) {
+    const r = runs.get(id);
+    const failed = Object.values(r.steps).some((s) => s.status === "error");
+    const kind = r.steps.decide?.data.kind;
+    const b = el("button", "slip" + (id === currentId ? " current" : ""));
+    b.type = "button";
+    const txt = el("span");
+    const when = new Date(r.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    txt.append(el("b", null, r.title || "Untitled"), el("small", null, when + (r.done ? " · " + (r.done.totalMs / 1000).toFixed(1) + " s" : "") + (r.real ? "" : " · practice")));
+    b.appendChild(txt);
+    b.appendChild(el("span", "stamp " + (failed ? "failed" : kind || "working"), failed ? "Failed" : kind ? KIND[kind].stamp : "Sorting"));
+    b.addEventListener("click", () => { currentId = id; renderAll(); });
+    pile.appendChild(b);
+  }
+}
+
+function renderAll() { renderStage(); renderPile(); }
+
+/* ---------- live feed ---------- */
+function connect() {
+  const es = new EventSource("/events");
+  const conn = $("b-conn");
+  es.addEventListener("history", (m) => {
+    runs.clear(); order = []; pending = [];
+    for (const e of JSON.parse(m.data)) apply(e);
+    currentId = order[0] ?? null;
+    renderAll();
+    conn.className = "badge good"; conn.innerHTML = "Live feed: <b>connected</b>";
+  });
+  es.onmessage = (m) => pending.push(JSON.parse(m.data));
+  es.onerror = () => { conn.className = "badge bad"; conn.innerHTML = "Live feed: <b>reconnecting</b>"; };
+}
+
+setInterval(() => {
+  if (!pending.length || Date.now() - lastShown < GAP_MS) return;
+  const e = pending.shift();
+  apply(e);
+  if (e.step === "received") currentId = e.runId; // follow the newest ticket
+  lastShown = Date.now();
+  fresh = e.runId + ":" + e.step;
+  renderAll();
+  fresh = null;
+}, 60);
+
+/* ---------- config + form ---------- */
+async function loadConfig() {
+  try {
+    cfg = await (await fetch("/api/config")).json();
+  } catch { /* keep defaults */ }
+  const jev = $("b-jev"), writes = $("b-writes");
+  jev.className = "badge " + (cfg.jevMock ? "warn" : "good");
+  jev.innerHTML = "Jev: <b>" + (cfg.jevMock ? "mock" : "live") + "</b>";
+  writes.className = "badge " + (cfg.clickupWrites ? "good" : "warn");
+  writes.innerHTML = "Writes: <b>" + (cfg.clickupWrites ? "ClickUp + GitHub" : cfg.dryRun ? "dry run" : "practice") + "</b>";
+  $("send-label").textContent = cfg.clickupWrites ? "Send to ClickUp" : "Try it (practice)";
+  $("hint").textContent = cfg.clickupWrites
+    ? "Creates a real task in the demo ClickUp list. Bugs also open a GitHub issue."
+    : "Practice mode: nothing is created in ClickUp or GitHub.";
+  renderStage();
+}
+
+document.querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click", () => {
+  const [t, d] = EXAMPLES[Number(b.dataset.ex)];
+  $("f-title").value = t; $("f-desc").value = d; $("f-title").focus();
+}));
+
+$("intake").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const send = $("send"), hint = $("hint");
+  const title = $("f-title").value.trim();
+  if (!title) { hint.className = "hint error"; hint.textContent = "Give the ticket a title first."; return; }
+  send.disabled = true; hint.className = "hint"; hint.textContent = "Sending…";
+  try {
+    const res = await fetch("/api/tickets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, description: $("f-desc").value }) });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || "The server didn't accept the ticket.");
+    hint.textContent = body.mode === "clickup" ? "Sent. It's now a real task in ClickUp." : "Sent as a practice ticket.";
+    $("f-title").value = ""; $("f-desc").value = "";
+  } catch (err) {
+    hint.className = "hint error"; hint.textContent = err.message;
+  } finally {
+    send.disabled = false;
+  }
+});
+
+loadConfig();
+connect();
+</script>
+</body>
+</html>

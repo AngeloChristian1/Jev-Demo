@@ -1,0 +1,743 @@
+<title>Decisions, Not Paragraphs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: a sorting office. Each slide is a full-bleed "bay" (grey floor, navy night shift, or hi-vis orange);
+   content sits on label stock with barcodes, stamps and conveyor tracks. Chrome = a segmented track along the bottom. */
+:root {
+  color-scheme: light;
+  --floor: #e9ecf1;        /* cool grey paper, light bays */
+  --label: #ffffff;        /* label stock */
+  --navy: #0e1630;         /* night bays */
+  --navy-2: #18234a;       /* raised surfaces on navy */
+  --ink: #111726;          /* text on light */
+  --signal: #ff5a1f;       /* hi-vis orange: Jev, action */
+  --feature: #3b6bff;      /* feature-request stamp */
+  --amber: #ffb21e;        /* needs-review stamp */
+  --white: #ffffff;
+
+  --font-display: "Archivo", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --t-hero: clamp(2.6rem, 7.2vw, 7.4rem);
+  --t-section: clamp(1.8rem, 3.8vw, 3.4rem);
+  --t-sub: clamp(1.1rem, 1.8vw, 1.55rem);
+  --t-lede: clamp(1.05rem, 1.6vw, 1.35rem);
+  --t-body: clamp(0.98rem, 1.15vw, 1.1rem);
+  --t-small: 0.9rem;
+  --t-meta: 0.74rem;
+
+  --gutter: clamp(16px, 4vw, 64px);
+  --radius: 6px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0; overflow: hidden;
+  background: var(--navy); color: var(--white);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+*, *::before, *::after { box-sizing: border-box; }
+h1, h2, h3, p, ul, ol, pre, figure { margin: 0; }
+h1, h2 { text-wrap: balance; }
+ul, ol { padding: 0; list-style: none; }
+
+/* ---------- bays (slide themes) ---------- */
+.slide {
+  --bg: var(--floor); --fg: var(--ink); --mut: #586176; --line: #c7cdd8; --card: var(--label); --card-fg: var(--ink);
+  position: absolute; inset: 0; display: none; flex-direction: column; justify-content: center; gap: 30px;
+  padding: 56px var(--gutter) 84px; overflow-y: auto; min-width: 0;
+  background: var(--bg); color: var(--fg);
+}
+.slide.night { --bg: var(--navy); --fg: var(--white); --mut: #9ba6c3; --line: #2b3863; --card: var(--navy-2); --card-fg: var(--white); }
+.slide.hivis { --bg: var(--signal); --fg: var(--navy); --mut: #4a1d0b; --line: #ff8a5c; --card: var(--label); --card-fg: var(--ink); }
+.slide.on { display: flex; }
+.slide.split.on { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(28px, 4vw, 64px); align-items: center; }
+.slide.split > div { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
+/* subtle floor grid on light bays */
+.slide:not(.night):not(.hivis) {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px; background-position: -1px -1px;
+  background-color: var(--bg);
+}
+.slide:not(.night):not(.hivis)::before {
+  content: ""; position: absolute; inset: 0; background: linear-gradient(var(--bg) 0, transparent 30%, transparent 70%, var(--bg)); opacity: .82; pointer-events: none;
+}
+.slide > * { position: relative; }
+
+/* ---------- type ---------- */
+.eyebrow {
+  font-family: var(--font-mono); font-size: var(--t-meta); font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--mut);
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before { content: ""; width: 22px; height: 3px; background: var(--signal); }
+.hivis .eyebrow::before { background: var(--navy); }
+.heading {
+  font-family: var(--font-display); font-stretch: 125%; font-weight: 800;
+  font-size: var(--t-section); line-height: 1.02; letter-spacing: -.01em; max-width: 22ch;
+}
+.lede { font-size: var(--t-lede); line-height: 1.4; color: var(--mut); max-width: 46ch; }
+.caption { font-size: var(--t-small); line-height: 1.45; color: var(--mut); max-width: 64ch; }
+.mono { font-family: var(--font-mono); }
+.hl { color: var(--signal); }
+.hivis .hl { color: var(--white); }
+.wide { width: min(100%, 1200px); }
+
+/* ---------- motion ---------- */
+.slide.on [data-in] { animation: rise .6s var(--ease) both; animation-delay: calc(var(--d, 0) * 90ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- chrome ---------- */
+.chrome {
+  position: fixed; left: var(--gutter); right: var(--gutter);
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 30; pointer-events: none;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center;
+  font-family: var(--font-mono); font-size: var(--t-meta); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--chrome-fg, #586176);
+}
+.chrome b { color: var(--chrome-strong, var(--ink)); font-weight: 600; }
+.track { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; min-width: 0; }
+.track i { height: 4px; background: var(--chrome-dim, #c7cdd8); border-radius: 2px; transition: background .3s; }
+.track i.done { background: var(--chrome-strong, var(--ink)); }
+.track i.now { background: var(--signal); }
+body.on-night { --chrome-fg: #9ba6c3; --chrome-strong: #ffffff; --chrome-dim: #2b3863; }
+body.on-hivis { --chrome-fg: #4a1d0b; --chrome-strong: var(--navy); --chrome-dim: #ff8a5c; }
+body.on-hivis .track i.now { background: var(--white); }
+
+/* ---------- shared pieces ---------- */
+.label {
+  background: var(--card); color: var(--card-fg); border-radius: var(--radius);
+  box-shadow: 0 1px 0 rgb(0 0 0 / .04), 0 14px 30px -18px rgb(14 22 48 / .45);
+  min-width: 0;
+}
+.night .label { box-shadow: inset 0 0 0 1px var(--line); }
+.barcode {
+  height: 34px; width: 100%;
+  background: repeating-linear-gradient(90deg,
+    currentColor 0 2px, transparent 2px 4px, currentColor 4px 5px, transparent 5px 8px,
+    currentColor 8px 11px, transparent 11px 12px, currentColor 12px 13px, transparent 13px 16px,
+    currentColor 16px 17px, transparent 17px 20px, currentColor 20px 23px, transparent 23px 25px);
+  opacity: .9;
+}
+.stamp {
+  display: inline-block; font-family: var(--font-display); font-stretch: 125%; font-weight: 900;
+  text-transform: uppercase; letter-spacing: .04em; font-size: .95rem; line-height: 1;
+  padding: 7px 11px 6px; border: 3px solid currentColor; border-radius: 4px; transform: rotate(-4deg);
+  white-space: nowrap;
+}
+.stamp.bug { color: var(--signal); }
+.stamp.feat { color: var(--feature); }
+.stamp.review { color: #c47f00; }
+.night .stamp.review { color: var(--amber); }
+.tagline { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  font-family: var(--font-mono); font-size: var(--t-small); font-weight: 500;
+  padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--card-fg);
+}
+.chip.go { background: var(--signal); border-color: var(--signal); color: var(--white); }
+
+/* ---------- 1 · opener ---------- */
+.open.on { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 72px); align-items: end; }
+.open .left { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.open .top {
+  position: absolute; top: 40px; left: var(--gutter); right: var(--gutter);
+  display: flex; justify-content: space-between; gap: 16px;
+  font-family: var(--font-mono); font-size: var(--t-meta); letter-spacing: .14em; text-transform: uppercase; color: var(--mut);
+}
+.open .top b { color: var(--signal); font-weight: 600; }
+.open h1 {
+  font-family: var(--font-display); font-stretch: 125%; font-weight: 900;
+  font-size: var(--t-hero); line-height: .92; letter-spacing: -.02em; text-transform: uppercase;
+}
+.open h1 .thin { font-weight: 300; font-stretch: 100%; text-transform: none; letter-spacing: -.03em; display: block; font-size: .5em; margin-bottom: .2em; color: var(--mut); }
+.open .q { font-size: var(--t-lede); color: var(--white); display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.open .q .chip { font-size: var(--t-body); }
+
+.parcel { padding: 22px; display: grid; gap: 16px; transform: rotate(2.2deg); color: var(--ink); background: var(--label); }
+.parcel .row { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .1em; color: #586176; }
+.parcel .to { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(1.6rem, 3vw, 2.6rem); line-height: 1; text-transform: uppercase; }
+.parcel .boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.parcel .boxes span { border: 2px solid var(--ink); border-radius: 4px; padding: 10px 12px; font-family: var(--font-mono); font-size: var(--t-small); font-weight: 600; display: flex; gap: 10px; align-items: center; }
+.parcel .boxes span::before { content: ""; width: 14px; height: 14px; border: 2px solid var(--ink); border-radius: 2px; flex: none; }
+.parcel .boxes span.x { background: var(--signal); color: var(--white); border-color: var(--signal); }
+.parcel .boxes span.x::before { border-color: var(--white); background: linear-gradient(45deg, transparent 43%, var(--white) 43% 57%, transparent 57%), linear-gradient(-45deg, transparent 43%, var(--white) 43% 57%, transparent 57%); }
+.slide.on .parcel { animation: drop .8s var(--ease) both .25s; }
+@keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-6deg); } to { opacity: 1; transform: rotate(2.2deg); } }
+
+/* ---------- 2 · one message ---------- */
+.msg { padding: 24px; display: grid; gap: 14px; max-width: 54ch; }
+.msg .meta { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .1em; color: #586176; }
+.msg p { font-size: var(--t-lede); line-height: 1.45; }
+.decisions { display: grid; gap: 12px; counter-reset: q; }
+.decisions li {
+  display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 16px; align-items: center;
+  padding: 14px 18px; border-radius: var(--radius); background: var(--card); color: var(--card-fg);
+  box-shadow: 0 10px 24px -18px rgb(14 22 48 / .5);
+}
+.decisions li::before {
+  counter-increment: q; content: "0" counter(q);
+  font-family: var(--font-mono); font-weight: 600; font-size: var(--t-small); color: var(--signal);
+}
+.decisions b { display: block; font-size: var(--t-sub); line-height: 1.15; font-weight: 700; }
+.decisions span { font-family: var(--font-mono); font-size: var(--t-meta); color: #586176; }
+
+/* ---------- 3 · compare ---------- */
+.lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.lane { padding: 26px; display: grid; gap: 18px; align-content: start; }
+.lane h3 { font-family: var(--font-mono); font-size: var(--t-meta); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #586176; }
+.lane .ask { font-size: var(--t-sub); font-weight: 700; line-height: 1.2; }
+.lane .arrow { font-family: var(--font-mono); color: #586176; }
+.para { display: grid; gap: 8px; }
+.para i { height: 9px; border-radius: 5px; background: #d5dae3; }
+.para i:nth-child(1) { width: 100%; } .para i:nth-child(2) { width: 94%; } .para i:nth-child(3) { width: 98%; } .para i:nth-child(4) { width: 76%; } .para i:nth-child(5) { width: 88%; } .para i:nth-child(6) { width: 52%; }
+.lane .note { font-size: var(--t-small); color: #586176; }
+.lane.jev { background: var(--navy); color: var(--white); }
+.lane.jev h3, .lane.jev .arrow, .lane.jev .note { color: #9ba6c3; }
+.answer { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.answer .conf { font-family: var(--font-mono); font-size: var(--t-body); }
+
+/* ---------- 4 · jev answer: printed label with bars ---------- */
+.printout { padding: 26px 28px; display: grid; gap: 20px; }
+.printout .head { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .1em; color: var(--mut); padding-bottom: 14px; border-bottom: 1px dashed var(--line); }
+.q-block { display: grid; gap: 8px; }
+.q-block h4 { margin: 0; font-family: var(--font-mono); font-size: var(--t-meta); font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--mut); }
+.bar { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 3.4rem; gap: 12px; align-items: center; font-family: var(--font-mono); font-size: var(--t-small); }
+.bar .t { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.bar .t i { display: block; height: 100%; width: var(--p); background: var(--mut); border-radius: 5px; }
+.bar.win .t i { background: var(--signal); }
+.bar.win { font-weight: 600; }
+.bar .v { text-align: right; font-variant-numeric: tabular-nums; }
+.slide.on .bar .t i { animation: fill 1s var(--ease) both; animation-delay: calc(.3s + var(--d, 0) * 120ms); }
+@keyframes fill { from { width: 0; } to { width: var(--p); } }
+.receipt { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- 5 · roles ---------- */
+.roles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.role { padding: 24px 22px; display: grid; gap: 12px; align-content: start; border-top: 6px solid var(--line); }
+.role b { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(1.5rem, 2.6vw, 2.3rem); line-height: 1; text-transform: uppercase; }
+.role em { font-style: normal; font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .12em; color: var(--signal); font-weight: 600; }
+.role span { font-size: var(--t-body); color: #586176; line-height: 1.45; }
+.role.jev { background: var(--signal); color: var(--white); border-top-color: var(--navy); }
+.role.jev em { color: var(--navy); }
+.role.jev span { color: rgb(255 255 255 / .9); }
+
+/* ---------- 6 · conveyor ---------- */
+.belt { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; padding-top: 34px; }
+.belt::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 8px; border-radius: 4px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 18px, transparent 18px 30px);
+  background-size: 30px 8px;
+}
+.slide.on .belt::before { animation: belt 1.2s linear infinite; }
+@keyframes belt { to { background-position: 30px 0; } }
+.station { padding: 20px 18px; display: grid; gap: 8px; align-content: start; position: relative; }
+.station::before { content: ""; position: absolute; top: -30px; left: 22px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 3px solid var(--fg); }
+.station .k { font-family: var(--font-mono); font-size: var(--t-meta); color: var(--mut); letter-spacing: .12em; text-transform: uppercase; }
+.station b { font-size: var(--t-sub); line-height: 1.15; }
+.station span { font-size: var(--t-small); color: var(--mut); line-height: 1.4; }
+.station.jev { background: var(--signal); color: var(--white); }
+.station.jev::before { background: var(--signal); border-color: var(--white); box-shadow: 0 0 0 6px rgb(255 90 31 / .3); }
+.station.jev .k, .station.jev span { color: rgb(255 255 255 / .88); }
+
+/* ---------- 7 · code ---------- */
+.code {
+  font-family: var(--font-mono); font-size: clamp(.8rem, 1.1vw, 1rem); line-height: 1.65;
+  padding: 24px 26px; border-radius: var(--radius); background: #070c1e; color: #dfe5f5;
+  box-shadow: inset 0 0 0 1px var(--line); overflow-x: auto; white-space: pre; max-width: 100%;
+}
+.code .k { color: #ff8a5c; } .code .s { color: #ffd27a; } .code .n { color: #8fb0ff; } .code .c { color: #6b7799; } .code .f { color: #ffffff; font-weight: 600; }
+
+/* ---------- 8 · outcomes ---------- */
+.sorted { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.slip { padding: 20px 22px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.slip q { font-size: var(--t-body); line-height: 1.4; quotes: "“" "”"; }
+.slip small { display: block; margin-top: 6px; font-family: var(--font-mono); font-size: var(--t-meta); color: #586176; text-transform: uppercase; letter-spacing: .08em; }
+.slide.on .slip .stamp { animation: thud .45s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(.35s + var(--d, 0) * 220ms); }
+@keyframes thud { from { opacity: 0; transform: scale(1.9) rotate(-14deg); } to { opacity: 1; transform: rotate(-4deg); } }
+
+/* ---------- 9 · demo ---------- */
+.live { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(3rem, 8vw, 7rem); line-height: .9; text-transform: uppercase; color: var(--navy); }
+.live .dot { width: .32em; height: .32em; border-radius: 50%; background: var(--white); box-shadow: 0 0 0 .08em var(--navy); }
+.slide.on .live .dot { animation: blink 1.4s steps(1) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.tries { display: grid; gap: 12px; counter-reset: t; }
+.tries li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 14px; align-items: start; font-size: var(--t-sub); font-weight: 700; line-height: 1.2; }
+.tries li::before { counter-increment: t; content: counter(t); display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--navy); color: var(--white); font-family: var(--font-mono); font-size: var(--t-small); }
+.tries small { display: block; font-weight: 400; font-size: var(--t-small); color: var(--mut); margin-top: 4px; }
+.cu { overflow: hidden; }
+.cu-head { display: flex; justify-content: space-between; gap: 12px; padding: 14px 20px; background: var(--navy); color: #9ba6c3; font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .1em; }
+.cu-body { padding: 22px 20px; display: grid; gap: 16px; }
+.cu-title { font-size: var(--t-sub); font-weight: 700; line-height: 1.2; }
+.cu-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.prio { font-family: var(--font-mono); font-size: var(--t-small); font-weight: 600; display: inline-flex; gap: 8px; align-items: center; }
+.prio::before { content: ""; width: 10px; height: 14px; background: var(--signal); clip-path: polygon(0 0, 100% 25%, 0 50%); }
+.cu-comment { border-left: 3px solid var(--signal); padding: 4px 0 4px 14px; font-family: var(--font-mono); font-size: var(--t-meta); line-height: 1.65; color: #3b4357; }
+.cu-comment b { display: block; color: var(--ink); }
+.prompt { font-family: var(--font-mono); font-size: var(--t-small); padding: 10px 14px; border-radius: var(--radius); background: var(--navy); color: var(--white); width: fit-content; max-width: 100%; }
+
+/* ---------- 10 · numbers ---------- */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.stat { padding: 26px 22px 10px 0; display: grid; gap: 12px; align-content: start; min-width: 0; border-right: 1px solid var(--line); padding-left: 22px; }
+.stat:first-child { padding-left: 0; }
+.stat:last-child { border-right: 0; }
+.stat .big { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(2.6rem, 5.6vw, 5.4rem); line-height: .95; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stat .big small { font-size: .38em; font-weight: 600; color: var(--mut); letter-spacing: 0; }
+.stat:first-child .big { color: var(--signal); }
+.stat span { font-size: var(--t-small); line-height: 1.4; color: var(--mut); }
+
+/* ---------- 11 · fit ---------- */
+.fit { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.fit .label { padding: 26px; display: grid; gap: 16px; align-content: start; }
+.fit h3 { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: var(--t-sub); text-transform: uppercase; }
+.fit ul { display: grid; gap: 12px; }
+.fit li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 10px; font-size: var(--t-body); align-items: baseline; }
+.fit .yes li::before { content: "✓"; color: var(--signal); font-weight: 900; }
+.fit .no li::before { content: "✕"; color: #8a93a8; font-weight: 900; }
+.fit .no li { color: #586176; }
+.fit .yes { box-shadow: inset 0 0 0 3px var(--signal), 0 14px 30px -18px rgb(14 22 48 / .45); }
+
+/* ---------- 12 · desks ---------- */
+.desks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.desk { padding: 22px 20px; display: grid; gap: 14px; align-content: start; }
+.desk .code-tag { font-family: var(--font-mono); font-size: var(--t-meta); letter-spacing: .12em; color: var(--mut); text-transform: uppercase; display: flex; justify-content: space-between; }
+.desk strong { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(1.3rem, 2.1vw, 1.9rem); text-transform: uppercase; line-height: 1; }
+.desk .eg { font-family: var(--font-mono); font-size: var(--t-meta); line-height: 1.7; padding: 10px 12px; border-radius: 4px; background: var(--navy); color: #dfe5f5; }
+.desk .eg b { color: var(--signal); font-weight: 600; }
+.desk p { font-size: var(--t-small); color: var(--mut); line-height: 1.45; }
+
+/* ---------- 13 · exercise ---------- */
+.template { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: clamp(1.5rem, 3.4vw, 3rem); line-height: 1.35; letter-spacing: -.01em; max-width: 26ch; }
+.template .blank { display: inline-block; min-width: 4.5em; border-bottom: .09em solid var(--signal); color: var(--signal); font-weight: 400; font-stretch: 100%; font-style: italic; }
+.examples { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- 14 · close ---------- */
+.close-q { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(2.1rem, 5.4vw, 5.2rem); line-height: .98; text-transform: uppercase; letter-spacing: -.02em; max-width: 18ch; color: var(--navy); }
+.close-q span { color: var(--white); }
+.chain { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: var(--t-body); font-weight: 600; color: var(--navy); }
+.chain b { background: var(--navy); color: var(--white); padding: 8px 14px; border-radius: 999px; font-weight: 600; }
+.chain i { font-style: normal; opacity: .6; }
+
+/* ---------- 15 · questions ---------- */
+.thanks.on { justify-content: flex-end; }
+.thanks h2 { font-family: var(--font-display); font-stretch: 125%; font-weight: 900; font-size: clamp(3.4rem, 13vw, 13rem); line-height: .85; text-transform: uppercase; letter-spacing: -.03em; }
+.thanks h2 span { color: var(--signal); }
+.thanks .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-family: var(--font-mono); font-size: var(--t-small); color: var(--mut); }
+
+/* ---------- overlays ---------- */
+.overlay { position: fixed; inset: 0; z-index: 70; display: none; background: rgb(7 12 30 / .7); backdrop-filter: blur(3px); }
+.overlay.on { display: block; }
+.panel {
+  position: absolute; left: var(--gutter); right: var(--gutter); bottom: var(--gutter);
+  max-width: 46rem; max-height: calc(100% - 2 * var(--gutter)); overflow: auto;
+  padding: 24px; background: var(--label); color: var(--ink); border-radius: var(--radius); border-top: 6px solid var(--signal);
+}
+.panel h2 { font-family: var(--font-mono); font-size: var(--t-meta); letter-spacing: .14em; text-transform: uppercase; color: #586176; margin-bottom: 14px; }
+.panel p { font-size: var(--t-lede); line-height: 1.5; }
+.keys { display: grid; grid-template-columns: 9rem 1fr; gap: 10px 16px; font-size: var(--t-body); }
+kbd { font-family: var(--font-mono); font-size: var(--t-meta); padding: 2px 6px; border-radius: 4px; border: 1px solid currentColor; }
+.grid { position: absolute; inset: var(--gutter); overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; align-content: start; }
+.thumb { text-align: left; padding: 14px 16px; min-height: 6rem; border: 0; border-radius: var(--radius); background: var(--label); color: var(--ink); cursor: pointer; font: inherit; display: grid; gap: 6px; align-content: start; }
+.thumb.current { background: var(--signal); color: var(--white); }
+.thumb small { font-family: var(--font-mono); font-size: var(--t-meta); opacity: .7; }
+.thumb strong { font-size: var(--t-body); }
+button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
+.deck { position: relative; height: 100%; width: 100%; overflow: hidden; outline: none; }
+
+@media (max-width: 900px) {
+  .slide.split.on, .open.on, .lanes, .roles, .belt, .stats, .desks, .fit, .sorted { grid-template-columns: 1fr; }
+  .slide.on { justify-content: flex-start; }
+  .slide.split.on, .open.on { align-content: start; }
+  .belt::before, .station::before { display: none; }
+  .belt { padding-top: 0; }
+  .stat { border-right: 0; border-bottom: 1px solid var(--line); padding-left: 0; }
+  .open .top { position: static; }
+  .parcel { transform: none; }
+  .bar { grid-template-columns: 6rem minmax(0, 1fr) 3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide.on [data-in], .slide.on .parcel, .slide.on .bar .t i, .slide.on .slip .stamp, .slide.on .belt::before, .slide.on .live .dot { animation: none !important; }
+  .track i { transition: none; }
+}
+</style>
+
+<div class="chrome" aria-hidden="true">
+  <span id="chapter">Backend team</span>
+  <div class="track" id="track"></div>
+  <span><b id="pos">01</b> / <span id="total">15</span></span>
+</div>
+
+<main class="deck" id="deck" tabindex="0">
+
+  <!-- 1 -->
+  <section class="slide night open on" data-chapter="SevenX tech talk" data-title="Do we need an LLM for everything?">
+    <div class="top"><span>SevenX tech talk · <b>Backend team</b></span><span>Jev × ClickUp × GitHub</span></div>
+    <div class="left">
+      <h1><span class="thin">Do we really need</span>An LLM for everything?</h1>
+      <p class="q" data-in style="--d:3">Is this a <span class="chip">writing</span> problem or a <span class="chip go">decision</span> problem?</p>
+    </div>
+    <div class="label parcel" aria-label="A routing label">
+      <div class="row"><span>From: client</span><span>Ticket 0001</span></div>
+      <div class="to">Route to: ?</div>
+      <div class="boxes">
+        <span>Write a reply</span>
+        <span class="x">Make a decision</span>
+      </div>
+      <div class="barcode" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide split" data-chapter="The problem" data-title="One message, four decisions">
+    <div>
+      <p class="eyebrow">A client writes in</p>
+      <div class="label msg" data-in style="--d:1">
+        <div class="meta"><span>ClickUp · new task</span><span>09:14</span></div>
+        <p>“Since this morning the export button does nothing when I click it. Our report is due at 3pm today.”</p>
+      </div>
+      <p class="lede" data-in style="--d:2">What should happen next?</p>
+    </div>
+    <div>
+      <h2 class="heading">One message. <span class="hl">Four decisions.</span></h2>
+      <ol class="decisions">
+        <li data-in style="--d:2"><div><b>Bug or feature?</b><span>bug · feature · question · unclear</span></div></li>
+        <li data-in style="--d:3"><div><b>How urgent?</b><span>urgent · high · normal · low</span></div></li>
+        <li data-in style="--d:4"><div><b>Which part of the system?</b><span>api · web · mobile · auth · infra</span></div></li>
+        <li data-in style="--d:5"><div><b>Does a person need to see it?</b><span>yes · no</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-chapter="The idea" data-title="Chat model vs decision model">
+    <h2 class="heading">None of those answers needs a paragraph.</h2>
+    <div class="lanes wide">
+      <div class="label lane" data-in style="--d:1">
+        <h3>A chat model</h3>
+        <p class="ask">“Tell me what you think.”</p>
+        <span class="arrow">↓</span>
+        <div class="para" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="note">A paragraph someone has to read, then act on.</p>
+      </div>
+      <div class="label lane jev" data-in style="--d:2">
+        <h3>A decision model · Jev</h3>
+        <p class="ask">“Choose from these options.”</p>
+        <span class="arrow">↓</span>
+        <div class="answer"><span class="stamp bug">Bug</span><span class="conf">100% confident</span></div>
+        <p class="note">One of our options, plus how sure it is. Code can act on it directly.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide night split" data-chapter="The idea" data-title="What Jev sends back">
+    <div>
+      <p class="eyebrow">Real response · jev-1.13.0</p>
+      <h2 class="heading">What Jev sent back for the export button.</h2>
+      <div class="receipt" data-in style="--d:2">
+        <span class="chip go">625 ms</span>
+        <span class="chip">807 tokens in</span>
+        <span class="chip">$0.000034</span>
+      </div>
+      <p class="caption" data-in style="--d:3">Every answer is one of the options we gave it. Nothing to parse, nothing to clean up. When api and web are this close, our rules label the area “unknown” rather than guess.</p>
+    </div>
+    <div class="label printout" data-in style="--d:1">
+      <div class="head"><span>Ticket 0001</span><span>4 questions · 1 call</span></div>
+      <div class="q-block"><h4>Type</h4>
+        <div class="bar win" style="--p:100%;--d:0"><span>bug</span><span class="t"><i></i></span><span class="v">100%</span></div>
+        <div class="bar" style="--p:1%;--d:1"><span>feature</span><span class="t"><i></i></span><span class="v">0%</span></div>
+      </div>
+      <div class="q-block"><h4>Urgency</h4>
+        <div class="bar win" style="--p:99%;--d:2"><span>high</span><span class="t"><i></i></span><span class="v">99%</span></div>
+        <div class="bar" style="--p:1%;--d:3"><span>urgent</span><span class="t"><i></i></span><span class="v">1%</span></div>
+      </div>
+      <div class="q-block"><h4>Area</h4>
+        <div class="bar win" style="--p:53%;--d:4"><span>api</span><span class="t"><i></i></span><span class="v">53%</span></div>
+        <div class="bar" style="--p:47%;--d:5"><span>web</span><span class="t"><i></i></span><span class="v">47%</span></div>
+      </div>
+      <div class="q-block"><h4>Needs a person?</h4>
+        <div class="bar" style="--p:31%;--d:6"><span>yes</span><span class="t"><i></i></span><span class="v">31%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-chapter="The idea" data-title="Who does what">
+    <h2 class="heading">Give each part the job it's good at.</h2>
+    <div class="roles wide">
+      <div class="label role" data-in style="--d:1"><em>Acts</em><b>Code</b><span>Things we know exactly. It's a bug, so set the priority.</span></div>
+      <div class="label role jev" data-in style="--d:2"><em>Decides</em><b>Jev</b><span>Small judgments, fast. Bug or feature? How urgent?</span></div>
+      <div class="label role" data-in style="--d:3"><em>Writes</em><b>LLM</b><span>Reasoning and writing. Explain the bug, draft the reply.</span></div>
+      <div class="label role" data-in style="--d:4"><em>Approves</em><b>People</b><span>Important or unclear calls. Refund disputes, vague tickets.</span></div>
+    </div>
+    <p class="caption">Before reaching for an LLM, ask which of these four the problem really is.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide night" data-chapter="What we built" data-title="The flow">
+    <p class="eyebrow">What we built</p>
+    <h2 class="heading">From client ticket to GitHub issue, without anyone triaging.</h2>
+    <ol class="belt wide">
+      <li class="label station" data-in style="--d:1"><span class="k">Step 1</span><b>Client</b><span>Raises a task in ClickUp</span></li>
+      <li class="label station" data-in style="--d:2"><span class="k">Step 2</span><b>Webhook</b><span>ClickUp tells our service</span></li>
+      <li class="label station jev" data-in style="--d:3"><span class="k">Step 3 · ~0.5s</span><b>Jev</b><span>Type, urgency, area, needs a person. One call.</span></li>
+      <li class="label station" data-in style="--d:4"><span class="k">Step 4</span><b>Our rules</b><span>Confident enough to act?</span></li>
+      <li class="label station" data-in style="--d:5"><span class="k">Step 5</span><b>Action</b><span>Tag + priority in ClickUp. Bugs become GitHub issues.</span></li>
+    </ol>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide night split" data-chapter="What we built" data-title="The Jev part is small">
+    <div>
+      <p class="eyebrow">For the engineers</p>
+      <h2 class="heading">The AI part is about <span class="hl">fifteen lines.</span></h2>
+      <p class="lede">The rest is ordinary backend work: the webhook and its signature, retries, duplicate events, and mapping answers onto ClickUp and GitHub.</p>
+    </div>
+<pre class="code" data-in style="--d:1" aria-label="Code sample"><span class="k">const</span> { answers } = <span class="k">await</span> jev.<span class="f">systemOne</span>({
+  state: { title, description },
+  questions: {
+    type: <span class="f">choice</span>(<span class="s">"What kind of request?"</span>, {
+      bug, feature_request, question, unclear,
+    }),
+    urgency: <span class="f">choice</span>(<span class="s">"How urgent?"</span>, {
+      urgent, high, normal, low,
+    }),
+    area: <span class="f">choice</span>(<span class="s">"Which part of the system?"</span>, AREAS),
+    needs_human: <span class="f">noul</span>(<span class="s">"A person should read this first."</span>),
+  },
+});
+
+<span class="k">if</span> (answers.type.confidence &lt; <span class="n">0.7</span>) <span class="c">// → needs-review</span></pre>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-chapter="What we built" data-title="Knowing when it doesn't know">
+    <h2 class="heading">The best part: it knows when it <span class="hl">doesn't</span> know.</h2>
+    <div class="sorted wide">
+      <div class="label slip" data-in style="--d:1"><div><q>The export button does nothing since this morning. Report due at 3pm.</q><small>→ priority high · GitHub issue</small></div><span class="stamp bug" style="--d:0">Bug</span></div>
+      <div class="label slip" data-in style="--d:2"><div><q>It'd be great if we could export to Excel too.</q><small>→ tagged · no GitHub issue</small></div><span class="stamp feat" style="--d:1">Feature</span></div>
+      <div class="label slip" data-in style="--d:3"><div><q>We were charged twice. We want a refund or we'll cancel.</q><small>→ a person decides</small></div><span class="stamp review" style="--d:2">Review</span></div>
+      <div class="label slip" data-in style="--d:4"><div><q>Something about the app feels off lately.</q><small>→ too vague · a person decides</small></div><span class="stamp review" style="--d:3">Review</span></div>
+    </div>
+    <p class="caption">Above the confidence line, the software acts. Below it, a person picks it up. We choose where the line sits: 70% today.</p>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide hivis split" data-chapter="Demo" data-title="Live demo">
+    <div>
+      <p class="live"><span class="dot" aria-hidden="true"></span>Live</p>
+      <ol class="tries">
+        <li data-in style="--d:1"><span>A complaint from a client<small>Someone from HR or Media types it, not us</small></span></li>
+        <li data-in style="--d:2"><span>A feature request<small>Should be tagged, with no GitHub issue</small></span></li>
+        <li data-in style="--d:3"><span>Something vague<small>Should go to a person</small></span></li>
+      </ol>
+      <p class="prompt" data-in style="--d:4">$ npm start</p>
+    </div>
+    <div class="label cu" data-in style="--d:2" aria-label="Example of a triaged ClickUp task">
+      <div class="cu-head"><span>ClickUp · client requests</span><span>just now</span></div>
+      <div class="cu-body">
+        <p class="cu-title">Export button does nothing</p>
+        <div class="cu-row"><span class="stamp bug">Bug</span><span class="prio">High</span></div>
+        <div class="cu-comment"><b>🤖 Jev triage: bug</b>bug (100% confident) · urgency high (99%)<br>GitHub issue opened · 625 ms · $0.000034</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide night" data-chapter="Results" data-title="The numbers">
+    <p class="eyebrow">Test run · 20 sample tickets · real Jev</p>
+    <h2 class="heading">Fast, cheap, and it sent the right ones to a person.</h2>
+    <div class="stats wide">
+      <div class="stat" data-in style="--d:1"><span class="big">20<small>/20</small></span><span>Bug, feature, question or unclear: all correct</span></div>
+      <div class="stat" data-in style="--d:2"><span class="big">8<small>/10</small></span><span>Urgency right. Both misses were one level off.</span></div>
+      <div class="stat" data-in style="--d:3"><span class="big">523<small>ms</small></span><span>Median per ticket. Slowest: 699 ms.</span></div>
+      <div class="stat" data-in style="--d:4"><span class="big">&lt;0.1<small>¢</small></span><span>For all 20 tickets together ($0.000675)</span></div>
+    </div>
+    <p class="caption">Tickets we wrote ourselves, not real client data. A small test, not a benchmark. 4 of the 20 went to a person: two vague ones, a refund dispute and a wrong invoice total.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-chapter="Results" data-title="When not to use it">
+    <h2 class="heading">It's not for everything.</h2>
+    <div class="fit wide">
+      <div class="label yes" data-in style="--d:1">
+        <h3>Good fit</h3>
+        <ul><li>Which team owns this?</li><li>How urgent is it?</li><li>Which category fits?</li><li>Does this need a person?</li><li>Which of these is most relevant?</li></ul>
+      </div>
+      <div class="label no" data-in style="--d:2">
+        <h3>Use something else</h3>
+        <ul><li>Write the email back to the client</li><li>Explain why the bug happens</li><li>Design the architecture</li><li>Write requirements or test cases</li><li>Have a conversation</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-chapter="Other desks" data-title="The same idea at other desks">
+    <p class="eyebrow">Not just engineering</p>
+    <h2 class="heading">The same idea at other desks.</h2>
+    <div class="desks wide">
+      <div class="label desk" data-in style="--d:1"><span class="code-tag"><span>Desk</span><span>HR</span></span><strong>HR</strong><span class="eg">“When does my probation end?” → <b>employment</b><br>“Forgot my laptop password” → <b>IT</b></span><p>Route internal questions to the right place automatically.</p></div>
+      <div class="label desk" data-in style="--d:2"><span class="code-tag"><span>Desk</span><span>MD</span></span><strong>Media</strong><span class="eg">campaign? audience? → <b>needs brand review?</b></span><p>Tag 50 posts in seconds. Only the doubtful ones get a second look.</p></div>
+      <div class="label desk" data-in style="--d:3"><span class="code-tag"><span>Desk</span><span>QA</span></span><strong>QA</strong><span class="eg">change → <b>smoke · targeted · full</b></span><p>Suggest how much testing a change needs. People still judge if it works.</p></div>
+      <div class="label desk" data-in style="--d:4"><span class="code-tag"><span>Desk</span><span>MG</span></span><strong>Managers</strong><span class="eg">40 threads, tickets, PRs → <b>top 5</b></span><p>Jev scores what needs attention today. Claude summarises only those five.</p></div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide night" data-chapter="Your turn" data-title="Your turn">
+    <p class="eyebrow">Two minutes · your turn</p>
+    <p class="template">Every time <span class="blank">X arrives</span>, I look at it, pick from <span class="blank">the same options</span>, then <span class="blank">do Y</span>.</p>
+    <p class="lede">What's one decision you make at least five times a week? Shout it out.</p>
+    <div class="examples" data-in style="--d:2">
+      <span class="chip">Which tests should I run?</span>
+      <span class="chip">Who should review this PR?</span>
+      <span class="chip">Where does this request go?</span>
+      <span class="chip">Does this need attention today?</span>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide hivis" data-chapter="Close" data-title="Writing or deciding?">
+    <p class="eyebrow">Take this home</p>
+    <h2 class="close-q">Before calling an LLM, ask: is this <span>writing</span> or <span>deciding?</span></h2>
+    <div class="chain" data-in style="--d:2"><b>LLM</b> writes <i>·</i> <b>Jev</b> decides <i>·</i> <b>Code</b> acts <i>·</i> <b>People</b> approve</div>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide night thanks" data-chapter="Close" data-title="Questions">
+    <h2>Questions<span>?</span></h2>
+    <div class="foot"><span>Jev · typesafe.ai</span><span>Backend team · SevenX</span></div>
+  </section>
+
+</main>
+
+<div class="overlay" id="help">
+  <div class="panel">
+    <h2>Keys</h2>
+    <div class="keys">
+      <div><kbd>→</kbd> <kbd>Space</kbd></div><div>Next</div>
+      <div><kbd>←</kbd> <kbd>Backspace</kbd></div><div>Previous</div>
+      <div><kbd>O</kbd></div><div>Overview</div>
+      <div><kbd>N</kbd></div><div>Speaker notes</div>
+      <div><kbd>F</kbd></div><div>Fullscreen</div>
+      <div><kbd>?</kbd> <kbd>Esc</kbd></div><div>Help</div>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="notes"><div class="panel"><h2>Speaker notes</h2><p id="noteText"></p></div></div>
+<div class="overlay" id="overview"><div class="grid" id="grid"></div></div>
+
+<script>
+const NOTES = [
+  "Open: most of us think AI means a chatbot that writes. Today: a kind of AI that doesn't write at all. Leave the question on screen for a second.",
+  "Read the message out loud. Ask the room: what should happen next? Let two or three people answer. Then show it's really four small decisions, each from a fixed list.",
+  "Key idea: none of those four answers needs a paragraph. A chat model gives you text someone has to read. A decision model gives one of your options plus confidence, which software can act on. Jev is built for this.",
+  "Real output from our test run. Point at the speed and cost. Point out api vs web is close at 53/47, and our rules are honest about it: area:unknown, not a guess.",
+  "The anchor slide. Code for what we know exactly, Jev for small judgments, an LLM for reasoning and writing, people for important or unclear calls.",
+  "Walk the conveyor left to right. Only step 3 is AI. Everything else is normal backend work, which is the part our team owns.",
+  "For the engineers: the Jev call is small and typed. The interesting work is around it: verifying the webhook signature, not creating duplicate issues when ClickUp sends an event twice, mapping urgency onto ClickUp priority.",
+  "Slow down here. The refund and the vague message go to a person. Confidence is what makes automation safe. We set the threshold: 70% today.",
+  "Switch to ClickUp and the terminal. Ask a volunteer from HR or Media to type a complaint. Then a feature request. Then something vague. Backup: the recorded video, or POST /triage/<taskId>.",
+  "Be clear these are 20 tickets we wrote, not a benchmark. The point: fast, cheap, and the right four went to a person.",
+  "Show we know the limits. Writing, explaining and designing are LLM or human jobs.",
+  "Link the managers example to the boss's Slack/ClickUp/GitHub report from the QA talk: Jev could filter before Claude summarises.",
+  "Give everyone two minutes. Collect answers from different teams and fit one or two into the sentence live.",
+  "The one sentence to remember. Different AI models are getting different jobs.",
+  "Likely question: why not just ask Claude for JSON? Answer: speed (about half a second), cost (fractions of a cent), the answer is always one of our options, and a confidence score we can set a threshold on."
+];
+
+const slides = [...document.querySelectorAll(".slide")];
+const $ = (id) => document.getElementById(id);
+const help = $("help"), notes = $("notes"), overview = $("overview"), grid = $("grid"), track = $("track");
+const pad = (n) => String(n).padStart(2, "0");
+let i = 0;
+$("total").textContent = pad(slides.length);
+
+slides.forEach((s, idx) => {
+  track.appendChild(document.createElement("i"));
+  const b = document.createElement("button");
+  b.className = "thumb";
+  b.innerHTML = "<small></small><strong></strong>";
+  b.querySelector("small").textContent = pad(idx + 1) + " · " + s.dataset.chapter;
+  b.querySelector("strong").textContent = s.dataset.title;
+  b.addEventListener("click", () => { overview.classList.remove("on"); go(idx); });
+  grid.appendChild(b);
+});
+
+function fromHash() {
+  const n = Number(location.hash.slice(1));
+  return Number.isInteger(n) && n >= 1 && n <= slides.length ? n - 1 : 0;
+}
+
+function render() {
+  slides.forEach((s, idx) => s.classList.toggle("on", idx === i));
+  [...track.children].forEach((t, idx) => { t.className = idx < i ? "done" : idx === i ? "now" : ""; });
+  $("pos").textContent = pad(i + 1);
+  $("chapter").textContent = slides[i].dataset.chapter;
+  $("noteText").textContent = NOTES[i] || "";
+  document.body.classList.toggle("on-night", slides[i].classList.contains("night"));
+  document.body.classList.toggle("on-hivis", slides[i].classList.contains("hivis"));
+  grid.querySelectorAll(".thumb").forEach((t, idx) => t.classList.toggle("current", idx === i));
+  try { history.replaceState(null, "", "#" + (i + 1)); } catch (e) { /* some viewers refuse */ }
+}
+
+function go(n) { i = Math.max(0, Math.min(slides.length - 1, n)); render(); }
+const overlayOpen = () => help.classList.contains("on") || overview.classList.contains("on");
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key;
+  if (k === "?" || (k === "Escape" && overlayOpen())) {
+    e.preventDefault();
+    if (overview.classList.contains("on")) overview.classList.remove("on");
+    else help.classList.toggle("on");
+    return;
+  }
+  if (k === "Escape") { notes.classList.remove("on"); return; }
+  if (k === "o" || k === "O") { e.preventDefault(); help.classList.remove("on"); overview.classList.toggle("on"); return; }
+  if (k === "n" || k === "N") { e.preventDefault(); notes.classList.toggle("on"); return; }
+  if (k === "f" || k === "F") {
+    e.preventDefault();
+    try {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else document.exitFullscreen();
+    } catch (err) { /* fullscreen unavailable */ }
+    return;
+  }
+  if (overlayOpen()) return;
+  if (["ArrowRight", "PageDown", " ", "Enter"].includes(k)) { e.preventDefault(); go(i + 1); }
+  else if (["ArrowLeft", "PageUp", "Backspace"].includes(k)) { e.preventDefault(); go(i - 1); }
+  else if (k === "Home") { e.preventDefault(); go(0); }
+  else if (k === "End") { e.preventDefault(); go(slides.length - 1); }
+});
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".overlay")) {
+    if (e.target.classList.contains("overlay")) e.target.classList.remove("on");
+    return;
+  }
+  if (e.target.closest("button")) return;
+  if (String(window.getSelection?.() ?? "").length) return;
+  go(e.clientX / window.innerWidth < 0.2 ? i - 1 : i + 1);
+});
+
+let touchX = null;
+document.addEventListener("touchstart", (e) => { touchX = e.changedTouches[0].clientX; }, { passive: true });
+document.addEventListener("touchend", (e) => {
+  if (touchX == null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (dx > 50) go(i - 1);
+  if (dx < -50) go(i + 1);
+  touchX = null;
+});
+
+i = fromHash();
+render();
+$("deck").focus();
+</script>

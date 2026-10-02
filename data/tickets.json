@@ -1,0 +1,22 @@
+[
+  { "title": "Export button does nothing", "description": "Since this morning the export button on the reports page does nothing when I click it. Our monthly report is due at 3pm today.", "expected": { "type": "bug", "urgency": "high" } },
+  { "title": "Nobody can log in", "description": "None of our staff can log in since about 9am. Everyone gets sent back to the sign-in page. We're completely blocked.", "expected": { "type": "bug", "urgency": "urgent" } },
+  { "title": "Typo on the dashboard", "description": "The dashboard header says 'Recieved' instead of 'Received'.", "expected": { "type": "bug", "urgency": "low" } },
+  { "title": "500 error when saving a profile", "description": "When I edit a user's phone number and press save I get a 500 error. If I refresh and try again it sometimes works.", "expected": { "type": "bug", "urgency": "normal" } },
+  { "title": "App crashes on Android", "description": "The mobile app crashes every time I open the notifications screen on my Samsung phone.", "expected": { "type": "bug", "urgency": "high" } },
+  { "title": "Invoices showing the wrong total", "description": "The invoice PDFs we sent to three customers show the wrong total, the VAT is added twice. We need this fixed ASAP.", "expected": { "type": "bug", "urgency": "urgent" } },
+  { "title": "Button colour looks off", "description": "The save button on the settings page is a slightly different blue from the rest of the app.", "expected": { "type": "bug", "urgency": "low" } },
+  { "title": "Search is very slow", "description": "Searching for a client takes 20-30 seconds. It used to be instant. We can still use it but it's painful.", "expected": { "type": "bug", "urgency": "normal" } },
+  { "title": "Export to Excel", "description": "It would be great if we could export reports to Excel as well as PDF.", "expected": { "type": "feature_request" } },
+  { "title": "Dark mode please", "description": "A lot of our team work late. Could you add a dark mode to the web app?", "expected": { "type": "feature_request" } },
+  { "title": "Bulk edit users", "description": "We'd love the ability to change the role of many users at once instead of one by one.", "expected": { "type": "feature_request" } },
+  { "title": "Slack notifications", "description": "Can we have notifications sent to our Slack channel when a new booking comes in?", "expected": { "type": "feature_request" } },
+  { "title": "Recurring appointments", "description": "Please add an option to make an appointment repeat every week.", "expected": { "type": "feature_request" } },
+  { "title": "How do I add a new user?", "description": "I'm new to the account. How do I add a colleague so they can log in?", "expected": { "type": "question" } },
+  { "title": "Where are old invoices?", "description": "Where can I find invoices from last year?", "expected": { "type": "question" } },
+  { "title": "Is there an API?", "description": "Is it possible to connect our CRM to your system? Do you have an API we can use?", "expected": { "type": "question" } },
+  { "title": "The app feels weird", "description": "Something about the app feels off lately, not sure what.", "expected": { "type": "unclear" } },
+  { "title": "Charged twice and want a refund", "description": "We were charged twice this month. This is unacceptable, we want a refund or we'll cancel.", "expected": { "type": "bug", "urgency": "high" } },
+  { "title": "Few things", "description": "The calendar is slow, also can you add a print button, and how do I change my password?", "expected": { "type": "unclear" } },
+  { "title": "Password reset email never arrives", "description": "I asked for a password reset three times and never got the email. I can't get into my account.", "expected": { "type": "bug", "urgency": "high" } }
+]

@@ -1,0 +1,25 @@
+{
+  "name": "jev-clickup-triage",
+  "version": "1.0.0",
+  "description": "Tech talk demo: triage ClickUp client tickets with Jev and open GitHub issues for bugs",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.ts",
+    "setup": "node --env-file-if-exists=.env scripts/setup.ts",
+    "try": "node --env-file-if-exists=.env scripts/try.ts",
+    "eval": "node --env-file-if-exists=.env scripts/eval.ts",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc"
+  },
+  "type": "module",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  }
+}
