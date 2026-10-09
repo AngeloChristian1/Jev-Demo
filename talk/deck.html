@@ -203,6 +203,21 @@ body.on-hivis .track i.now { background: var(--white); }
 .lane.jev h3, .lane.jev .arrow, .lane.jev .note { color: #9ba6c3; }
 .answer { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .answer .conf { font-family: var(--font-mono); font-size: var(--t-body); }
+.phases { display: grid; gap: 6px; font-family: var(--font-mono); font-size: var(--t-small); color: #586176; }
+.phases li { display: grid; grid-template-columns: 1.3rem minmax(0, 1fr); align-items: center; column-gap: 8px; }
+.phases .spin, .phases .ok { grid-column: 1; grid-row: 1; justify-self: center; }
+.phases .spin { width: .85rem; height: .85rem; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: 0; }
+.phases .ok { color: var(--signal); font-weight: 700; }
+.phases .time { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--signal); color: var(--white); font-size: var(--t-meta); }
+.lane.jev .phases { color: #9ba6c3; }
+/* Each step spins in turn, then ticks; the answer appears after the last step. 0.55s per step. */
+.slide.on .phases li { animation: rise .35s var(--ease) both; animation-delay: calc(.4s + var(--d) * .55s); }
+.slide.on .phases .spin { animation: spin .6s linear infinite, show-spin .55s steps(1) both; animation-delay: 0s, calc(.4s + var(--d) * .55s); }
+.slide.on .phases .ok { animation: tick .2s var(--ease) both; animation-delay: calc(.4s + (var(--d) + 1) * .55s); }
+.slide.on .after { animation: rise .5s var(--ease) both; animation-delay: calc(.4s + var(--d) * .55s); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes show-spin { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes tick { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 
 /* ---------- 4 · jev answer: printed label with bars ---------- */
 .printout { padding: 26px 28px; display: grid; gap: 20px; }
@@ -331,6 +346,42 @@ body.on-hivis .track i.now { background: var(--white); }
 .thanks h2 span { color: var(--signal); }
 .thanks .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-family: var(--font-mono); font-size: var(--t-small); color: var(--mut); }
 
+
+/* ---------- explainers: LLM + Jev ---------- */
+.examples-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.examples-row .mono { font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .12em; color: var(--mut); }
+.chat { padding: 0; overflow: hidden; }
+.chat-head { padding: 12px 18px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .1em; color: #586176; display: flex; justify-content: space-between; gap: 12px; }
+.chat-body { padding: 20px 18px; display: grid; gap: 14px; }
+.bubble { max-width: 85%; padding: 12px 15px; border-radius: 14px; font-size: var(--t-body); line-height: 1.5; }
+.bubble.me { justify-self: end; background: var(--navy); color: var(--white); border-bottom-right-radius: 4px; }
+.bubble.ai { justify-self: start; background: #eef1f6; color: var(--ink); border-bottom-left-radius: 4px; }
+.slide.on .bubble.ai { animation: type 2.4s steps(40) both .5s; }
+@keyframes type { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+.chat-foot { padding: 0 18px 18px; font-family: var(--font-mono); font-size: var(--t-meta); color: #586176; }
+.traits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+.traits li { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 8px; font-size: var(--t-body); align-items: baseline; }
+.traits .plus::before { content: "+"; color: var(--signal); font-weight: 900; }
+.traits .minus::before { content: "–"; color: var(--mut); font-weight: 900; }
+.traits .minus { color: var(--mut); }
+.give-get { display: grid; gap: 12px; }
+.give-get div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 14px; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.give-get b { font-family: var(--font-mono); font-size: var(--t-meta); text-transform: uppercase; letter-spacing: .12em; color: var(--signal); font-weight: 600; }
+.give-get span { font-size: var(--t-lede); line-height: 1.35; }
+.mcq { padding: 24px; display: grid; gap: 14px; color: var(--ink); background: var(--label); }
+.mcq .qtext { font-size: var(--t-sub); font-weight: 700; line-height: 1.25; }
+.mcq .ctx { font-size: var(--t-small); color: #586176; font-style: italic; }
+.opt { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 14px; border: 2px solid #c7cdd8; border-radius: 6px; font-weight: 600; }
+.opt::before { content: ""; width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 2px solid #8a93a8; }
+.opt .p { font-family: var(--font-mono); font-size: var(--t-small); color: #586176; font-variant-numeric: tabular-nums; }
+.opt.pick { border-color: var(--signal); background: #fff2ec; }
+.opt.pick::before { border-color: var(--signal); background: radial-gradient(circle, var(--signal) 0 45%, transparent 50%); }
+.opt.pick .p { color: var(--signal); font-weight: 600; }
+.slide.on .opt.pick { animation: pick .5s var(--ease) both 1s; }
+@keyframes pick { from { border-color: #c7cdd8; background: transparent; } }
+.mcq .foot { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+.mcq .foot .chip { background: var(--navy); color: var(--white); border-color: var(--navy); font-size: var(--t-meta); }
+
 /* ---------- overlays ---------- */
 .overlay { position: fixed; inset: 0; z-index: 70; display: none; background: rgb(7 12 30 / .7); backdrop-filter: blur(3px); }
 .overlay.on { display: block; }
@@ -352,7 +403,7 @@ button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); ou
 .deck { position: relative; height: 100%; width: 100%; overflow: hidden; outline: none; }
 
 @media (max-width: 900px) {
-  .slide.split.on, .open.on, .lanes, .roles, .belt, .stats, .desks, .fit, .sorted { grid-template-columns: 1fr; }
+  .slide.split.on, .open.on, .lanes, .traits, .roles, .belt, .stats, .desks, .fit, .sorted { grid-template-columns: 1fr; }
   .slide.on { justify-content: flex-start; }
   .slide.split.on, .open.on { align-content: start; }
   .belt::before, .station::before { display: none; }
@@ -363,8 +414,9 @@ button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); ou
   .bar { grid-template-columns: 6rem minmax(0, 1fr) 3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .slide.on [data-in], .slide.on .parcel, .slide.on .bar .t i, .slide.on .slip .stamp, .slide.on .belt::before, .slide.on .live .dot { animation: none !important; }
+  .slide.on [data-in], .slide.on .phases li, .slide.on .phases .ok, .slide.on .after, .slide.on .parcel, .slide.on .bar .t i, .slide.on .bubble.ai, .slide.on .opt.pick, .slide.on .slip .stamp, .slide.on .belt::before, .slide.on .live .dot { animation: none !important; }
   .track i { transition: none; }
+  .slide.on .phases .spin { animation: none !important; opacity: 0; }
 }
 </style>
 
@@ -391,6 +443,53 @@ button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); ou
         <span class="x">Make a decision</span>
       </div>
       <div class="barcode" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- explainer: LLM -->
+  <section class="slide split" data-chapter="First, the basics" data-title="What's an LLM?">
+    <div>
+      <p class="eyebrow">First, the basics</p>
+      <h2 class="heading">What's an <span class="hl">LLM</span>?</h2>
+      <p class="lede" data-in style="--d:1">A Large Language Model is AI that has read a huge amount of text, so it can write like a person. You ask in plain words, and it writes an answer back.</p>
+      <div class="examples-row" data-in style="--d:2"><span class="mono">You know these</span><span class="chip">ChatGPT</span><span class="chip">Claude</span><span class="chip">Gemini</span></div>
+      <ul class="traits" data-in style="--d:3">
+        <li class="plus">Writes, explains, summarises</li>
+        <li class="minus">Answers in paragraphs</li>
+        <li class="plus">Handles almost any question</li>
+        <li class="minus">Takes a few seconds each time</li>
+      </ul>
+    </div>
+    <div class="label chat" data-in style="--d:1" aria-label="Example chat with an LLM">
+      <div class="chat-head"><span>A chat with an LLM</span><span>essay answer</span></div>
+      <div class="chat-body">
+        <p class="bubble me">A client says the export button does nothing and their report is due at 3pm. Is this a bug?</p>
+        <p class="bubble ai">It sounds like a bug. The export button used to work, and now nothing happens when they click it, which points to something broken rather than a missing feature. Because they have a deadline at 3pm today, I'd treat it as high priority. It may be worth checking whether a recent release changed the export code…</p>
+      </div>
+      <p class="chat-foot">Helpful, but a person still has to read it and decide what to do.</p>
+    </div>
+  </section>
+
+  <!-- explainer: Jev -->
+  <section class="slide night split" data-chapter="First, the basics" data-title="And what's Jev?">
+    <div>
+      <p class="eyebrow">And the new one</p>
+      <h2 class="heading">What's <span class="hl">Jev</span>?</h2>
+      <p class="lede" data-in style="--d:1">A different kind of AI model, made by TypeSafe. It doesn't write. It chooses.</p>
+      <div class="give-get" data-in style="--d:2">
+        <div><b>You give it</b><span>The information, a question, and the possible answers</span></div>
+        <div><b>It gives back</b><span>One of those answers, and how sure it is</span></div>
+      </div>
+      <p class="caption" data-in style="--d:3">If an LLM sits an essay exam, Jev sits a multiple-choice exam. And it tells you how confident it is in each answer.</p>
+    </div>
+    <div class="label mcq" data-in style="--d:1" aria-label="Example multiple-choice question answered by Jev">
+      <p class="ctx">“The export button does nothing. Our report is due at 3pm.”</p>
+      <p class="qtext">What kind of request is this?</p>
+      <div class="opt pick"><span>Bug</span><span class="p">100%</span></div>
+      <div class="opt"><span>Feature request</span><span class="p">0%</span></div>
+      <div class="opt"><span>Question</span><span class="p">0%</span></div>
+      <div class="opt"><span>Unclear</span><span class="p">0%</span></div>
+      <div class="foot"><span class="chip">~0.5 seconds</span><span class="chip">a fraction of a cent</span><span class="chip">no paragraph to read</span></div>
     </div>
   </section>
 
@@ -422,15 +521,24 @@ button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); ou
       <div class="label lane" data-in style="--d:1">
         <h3>A chat model</h3>
         <p class="ask">“Tell me what you think.”</p>
-        <span class="arrow">↓</span>
-        <div class="para" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <p class="note">A paragraph someone has to read, then act on.</p>
+        <ol class="phases" aria-label="Steps a chat model goes through">
+          <li style="--d:0"><span class="spin"></span><span class="ok">✓</span><span class="txt">Reading the message…</span></li>
+          <li style="--d:1"><span class="spin"></span><span class="ok">✓</span><span class="txt">Reckoning…</span></li>
+          <li style="--d:2"><span class="spin"></span><span class="ok">✓</span><span class="txt">Triaging…</span></li>
+          <li style="--d:3"><span class="spin"></span><span class="ok">✓</span><span class="txt">Thinking…</span></li>
+          <li style="--d:4"><span class="spin"></span><span class="ok">✓</span><span class="txt">Weighing it up…</span></li>
+          <li style="--d:5"><span class="spin"></span><span class="ok">✓</span><span class="txt">Writing the answer…</span></li>
+        </ol>
+        <div class="para after" style="--d:6" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="note">Several steps and a few seconds later: a paragraph someone has to read, then act on.</p>
       </div>
       <div class="label lane jev" data-in style="--d:2">
         <h3>A decision model · Jev</h3>
         <p class="ask">“Choose from these options.”</p>
-        <span class="arrow">↓</span>
-        <div class="answer"><span class="stamp bug">Bug</span><span class="conf">100% confident</span></div>
+        <ol class="phases" aria-label="Steps Jev goes through">
+          <li style="--d:0"><span class="spin"></span><span class="ok">✓</span><span class="txt">Choosing… <span class="time">~0.5 s</span></span></li>
+        </ol>
+        <div class="answer after" style="--d:1"><span class="stamp bug">Bug</span><span class="conf">100% confident</span></div>
         <p class="note">One of our options, plus how sure it is. Code can act on it directly.</p>
       </div>
     </div>
@@ -637,8 +745,10 @@ button:focus-visible, .deck:focus-visible { outline: 3px solid var(--signal); ou
 <script>
 const NOTES = [
   "Open: most of us think AI means a chatbot that writes. Today: a kind of AI that doesn't write at all. Leave the question on screen for a second.",
+  "For the non-technical folks: an LLM is the kind of AI behind ChatGPT and Claude. It's read a huge amount of text, so it can write like a person. Read out the example: it's a helpful answer, but it's a paragraph. Someone still has to read it and decide what to do.",
+  "Jev is the new one. It doesn't write, it picks. You give it the information, the question and the possible answers. It gives back one answer and how sure it is. The easy way to remember it: essay exam vs multiple-choice exam. Same question as the last slide, but the answer is ready for software to act on.",
   "Read the message out loud. Ask the room: what should happen next? Let two or three people answer. Then show it's really four small decisions, each from a fixed list.",
-  "Key idea: none of those four answers needs a paragraph. A chat model gives you text someone has to read. A decision model gives one of your options plus confidence, which software can act on. Jev is built for this.",
+  "Key idea: none of those four answers needs a paragraph. Watch the left side: a chat model goes through phases (reading, reckoning, triaging, thinking, weighing it up, writing) before you get anything back. That's what you see when ChatGPT or Claude shows \"Thinking…\". Jev does one thing: choose. A chat model gives you text someone has to read. A decision model gives one of your options plus confidence, which software can act on. Jev is built for this.",
   "Real output from our test run. Point at the speed and cost. Point out api vs web is close at 53/47, and our rules are honest about it: area:unknown, not a guess.",
   "The anchor slide. Code for what we know exactly, Jev for small judgments, an LLM for reasoning and writing, people for important or unclear calls.",
   "Walk the conveyor left to right. Only step 3 is AI. Everything else is normal backend work, which is the part our team owns.",

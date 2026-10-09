@@ -41,7 +41,9 @@ Without `TYPESAFE_API_KEY`, the app runs in **mock mode**. The real SDK is used,
    - `CLICKUP_TOKEN`: ClickUp → Settings → Apps → API Token.
    - `CLICKUP_LIST_ID`: a **demo list** with fake tickets only. The id is in the list's URL.
    - `GITHUB_TOKEN` + `GITHUB_DEFAULT_REPO`: a throwaway repo. The token needs Issues read/write.
-2. Expose your laptop to ClickUp: `ngrok http 3000`, then put the https URL in `PUBLIC_URL`.
+2. Expose your laptop to ClickUp with a fixed address. Every ngrok account gets one free dev domain, listed in the ngrok dashboard under **Domains**. Put it in `.env` as `PUBLIC_URL=https://your-name.ngrok-free.dev`, then run `npm run tunnel` (keep it running). A plain `ngrok http 3000` gets a new random address each time, and the webhook breaks.
+
+   Only one person should run the server against the same ClickUp list. Two servers would both triage every ticket, and `npm run setup` replaces this app's webhook on that list.
 3. `npm run setup`. This creates the ClickUp tags and GitHub labels, registers the webhook, and prints `CLICKUP_WEBHOOK_SECRET`. Add the secret to `.env`.
 4. `npm start`, then create a task in the list and watch the terminal and ClickUp.
 
